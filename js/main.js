@@ -9,6 +9,8 @@ var ReReReRemix = (function($, _) {
       var context = new webkitAudioContext();
       r.remixer = createJRemixer(context, $, r.apiKey);
       r.player = r.remixer.getPlayer();
+      
+      return true;
     }
   };
 
