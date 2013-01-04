@@ -13,21 +13,43 @@ var ReReReRemix = (function($, _) {
   };
 
   var displayTrackRemixed = function () {
+    console.log("FINISHED REMIXING TRACK");
+    console.log("PLAYING NOW");
+    r.player.play(0, r.remix);
   };
 
   var displayRemixFailed = function () {
+    console.log("REMIX FAILED, SOMETHING AWFUL HAPPENED");
   };
 
+  // magic remixing code goes hurr
   var remixTrack = function(t) {
+    var dfd = $.Deferred();
+    
+    var remix = [];
 
+    for(var i=0; i < track.analysis.beats.length; i++) {
+      for (i % 4 == 0)
+        remix.push(track.analysis.beats[i]);
+    }
+
+    if (_.isEmpty(remix))
+      return dfd.reject();
+
+    r.remix = remix;
+
+    return dfd.resolve();
   };
 
   var displayTrackLoading = function(p) {
-    console.log("LOADING: " + p);
+    if (p == 100)
+      console.log("TRACK LOADED, REMIXING");
+    else
+      console.log("TRACK LOADING: " + p);
   };
 
   var displayTrackLoadFailed = function (status) {
-    console.log("FAILED WITH STATUS: " + status);
+    console.log("FAILED TO LOAD TRACK, ERROR: " + status);
   };
 
   var loadTrack = function () {
@@ -93,4 +115,6 @@ $(function() {
     var r = new ReReReRemix(apiKey, trackId, trackUrl);
     r.remixTrack();
   };
+
+  $('#remix-btn').click(remixTrack);
 });
