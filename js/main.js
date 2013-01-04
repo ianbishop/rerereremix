@@ -160,6 +160,10 @@ var ReReReRemix = (function($, _) {
   var attemptAnalyzeAndRemix = function () {
     attemptAnalyze().then(handleTrackStatusResponse, attemptRemix).then(displayFailedToAnalyzeTrack);
   };
+
+  var setTrackId = function (trackId) { 
+    r.trackId = trackId;
+  };
   
   /* Constructor */
   var ReReReRemix = function (apiKey, trackUrl) {
@@ -171,7 +175,9 @@ var ReReReRemix = (function($, _) {
 
   ReReReRemix.prototype = {
     constructor: ReReReRemix,
-    analyzeAndRemixTrack: attemptAnalyzeAndRemix
+    analyzeAndRemixTrack: attemptAnalyzeAndRemix,
+    remixTrack: attemptRemix,
+    setTrackId: setTrackId
   };
 
   return ReReReRemix;
@@ -182,17 +188,17 @@ $(function() {
   function analyzeAndRemixTrack () {
     var apiKey = $('#api-key').val();
     var trackUrl = $('#track-url').val();
-    
+    var trackId = $('#track-id').val();
+
     var r = new ReReReRemix(apiKey, trackUrl);
-    r.analyzeAndRemixTrack();
 
-    $.post("http://developer.echonest.com/api/v4/track/upload", {
-        "api_key": apiKey,
-        "url": trackUrl
-      }, function(d) {
-        $('#track-id').val(d["response"]["track"]["id"]);
-      });
-
+    if (_.isEmpty(trackId)) {
+      r.analyzeAndRemixTrack();
+    }
+    else {
+      r.setTrackId(trackId);
+      r.remixTrack();
+    }
   };
 
   $('#remix-btn').click(analyzeAndRemixTrack);
