@@ -82,7 +82,7 @@ var ReReReRemix = (function($, _) {
   };
 
   var attemptRemix = function () {
-    if (!initializeBrowser)
+    if (!initializeBrowser())
       displayUpgradeBrowser();
     else
       loadTrack().then(remixTrack, displayTrackLoadFailed)
