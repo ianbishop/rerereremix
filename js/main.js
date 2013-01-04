@@ -1,6 +1,12 @@
 var ReReReRemix = (function($, _) {
   var r;
 
+  $.wait = function (time) {
+    return $.Deferred(function(dfd) {
+      setTimeout(dfd.resolve, time);
+    });
+  };
+
   var initializeBrowser = function () {
     if (window.webkitAudioContext === undefined) {
       return false;
@@ -85,14 +91,79 @@ var ReReReRemix = (function($, _) {
     if (!initializeBrowser())
       displayUpgradeBrowser();
     else
-      loadTrack().then(remixTrack, displayTrackLoadFailed)
-                 .then(displayTrackRemixed, displayRemixFailed);
+      return loadTrack().then(remixTrack, displayTrackLoadFailed)
+                        .then(displayTrackRemixed, displayRemixFailed);
+  };
+
+  var displayFailedToAnalyzeTrack = function () {
+    console.log("Failed to analyze track");
+  };
+
+  var displayFailedToUpload = function () {
+    console.log("Failed to upload track");
+  };
+
+  var handleTrackStatusResponse = function(status) {
+    var dfd = $.Deferred();
+
+    if (status)
+      dfd.resolve();
+    else
+      dfd.reject();
+
+    return dfd.promise();
+  };
+
+  var checkTrackStatus = function () {
+    return $.get('http://developer.echonest.com/api/v4/track/profile?format=json&bucket=audio_summary', 
+                 { "api_key": r.apiKey, "id": r.trackId });
+  };
+
+  var checkTrackAnalyzed = function () {
+    return checkTrackStatus()
+      .pipe(function(data) {
+        var status = data["response"]["track"]["status"];
+
+        if (_.isEqual(status == "complete")) {
+          return true;
+        }
+        else if (_.isEqual(status == "pending")) {
+          return $.wait(2000).then(checkTrackStatus);
+        }
+        else {
+          return false;
+        }
+      });
+  };
+
+  var uploadTrack = function () {
+    var dfd = $.Deferred();
+
+    $.post("http://developer.echonest.com/api/v4/track/upload", { "api_key": r.apiKey, "url": r.trackUrl })
+      .done(function(data) {
+        if (_.isEqual(data["response"]["track"]["status"], "pending")) {
+          r.trackId = data["response"]["track"]["id"];
+          dfd.resolve();
+        }
+        else {
+          dfd.reject();
+        }
+      });
+
+    return dfd.promise();
+  };
+
+  var attemptAnalyze = function () {
+    return uploadTrack().then(checkTrackAnalyzed, displayFailedToUpload);
+  };
+
+  var attemptAnalyzeAndRemix = function () {
+    attemptAnalyze().then(handleTrackStatusResponse, attemptRemix).then(displayFailedToAnalyzeTrack);
   };
   
   /* Constructor */
-  var ReReReRemix = function (apiKey, trackId, trackUrl) {
+  var ReReReRemix = function (apiKey, trackUrl) {
     this.apiKey = apiKey;
-    this.trackId = trackId;
     this.trackUrl = trackUrl;
 
     r = this;
@@ -100,7 +171,7 @@ var ReReReRemix = (function($, _) {
 
   ReReReRemix.prototype = {
     constructor: ReReReRemix,
-    remixTrack: attemptRemix
+    analyzeAndRemixTrack: attemptAnalyzeAndRemix
   };
 
   return ReReReRemix;
@@ -108,14 +179,21 @@ var ReReReRemix = (function($, _) {
 
 $(function() {
 
-  function remixTrack () {
+  function analyzeAndRemixTrack () {
     var apiKey = $('#api-key').val();
-    var trackId = $('#track-id').val();
     var trackUrl = $('#track-url').val();
+    
+    var r = new ReReReRemix(apiKey, trackUrl);
+    r.analyzeAndRemixTrack();
 
-    var r = new ReReReRemix(apiKey, trackId, trackUrl);
-    r.remixTrack();
+    $.post("http://developer.echonest.com/api/v4/track/upload", {
+        "api_key": apiKey,
+        "url": trackUrl
+      }, function(d) {
+        $('#track-id').val(d["response"]["track"]["id"]);
+      });
+
   };
 
-  $('#remix-btn').click(remixTrack);
+  $('#remix-btn').click(analyzeAndRemixTrack);
 });
