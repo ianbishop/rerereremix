@@ -29,7 +29,7 @@ var ReReReRemix = (function($, _) {
     var remix = [];
 
     for(var i=0; i < track.analysis.beats.length; i++) {
-      for (i % 4 == 0)
+      if (i % 4 == 0)
         remix.push(track.analysis.beats[i]);
     }
 
@@ -105,7 +105,6 @@ var ReReReRemix = (function($, _) {
 })($, _);
 
 $(function() {
-  use "strict";
 
   function remixTrack () {
     var apiKey = $('#api-key').val();
