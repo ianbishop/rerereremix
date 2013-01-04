@@ -68,7 +68,7 @@ var ReReReRemix = (function($, _) {
     r.remixer.remixTrackById(r.trackId, r.trackUrl, function(t, p) {
       dfd.notify(p);
 
-      if (t.status == 'ok') {
+      if (_.isEqual(t.status, "ok")) {
         return dfd.resolve(t);
       }
       else {
