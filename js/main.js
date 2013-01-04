@@ -55,19 +55,19 @@ var ReReReRemix = (function($, _) {
   var loadTrack = function () {
     var dfd = $.Deferred();
 
-    dfd.progress(trackLoading);
+    dfd.progress(displayTrackLoading);
 
-    r.remixTrackById(r.trackId, r.trackUrl, function(t, p) {
-      displayTrackLoading(p);
+    r.remixer.remixTrackById(r.trackId, r.trackUrl, function(t, p) {
+      dfd.notify(p);
 
       if (t.status == 'ok') {
-        dfd.resolve(t);
+        return dfd.resolve(t);
       }
       else {
         // i'm assuming this is an error
         // but who knows, no docs!!
         if (p == 100) {
-          dfd.reject(t.status);
+          return dfd.reject(t.status);
         }
       }
     });
@@ -83,8 +83,8 @@ var ReReReRemix = (function($, _) {
     if (!initializeBrowser)
       displayUpgradeBrowser();
     else
-      loadTrack.then(remixTrack, displayTrackLoadFailed)
-               .then(displayTrackRemixed, displayRemixFailed);
+      loadTrack().then(remixTrack, displayTrackLoadFailed)
+                 .then(displayTrackRemixed, displayRemixFailed);
   };
   
   /* Constructor */
